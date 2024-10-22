@@ -123,10 +123,10 @@ def plot_fitness_evolution(fitness_history):
 
 # Função para rodar o AG e plotar os gráficos para diferentes funções e limites
 def run_and_plot(func, bounds, func_name):
-    g_pop_size = 1000
-    g_num_generations = 10000
+    g_pop_size = 10000
+    g_num_generations = 100000
     g_mutation_rate = 0.2
-    num_best_to_select = 250
+    num_best_to_select = 2500
     no_improvement_generations = 0
     best_fitness_ever = float('inf')
 
@@ -147,7 +147,7 @@ def run_and_plot(func, bounds, func_name):
         print(f"Geração {generation + 1}, Melhor Fitness: {best_fitness}, Melhor Cromossomo: {best_cromossomo}")
 
         # Condição de parada se o melhor fitness é próximo de 0 (para Schwefel)
-        if func == 0 and np.isclose(best_fitness, 0, atol=1):
+        if func == 0 and np.isclose(best_fitness, 0, atol=0.1):
             print("Atingiu o valor ótimo!")
             break
 
@@ -168,7 +168,6 @@ def run_and_plot(func, bounds, func_name):
 # Dicionário de funções
 functions = {0: schwefel, 1: rastrigin, 2: third_function}
 
-# Rodar para Schwefel, Rastrigin e Terceira Função com os bounds corretos
 run_and_plot(0, [-500, 500], "Schwefel")
 #run_and_plot(1, [-5, 5], "Rastrigin")
 #run_and_plot(2, [-2, 2], "Third Function")
