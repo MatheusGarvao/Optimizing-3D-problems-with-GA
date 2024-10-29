@@ -312,7 +312,7 @@ def run_and_plot(func, bounds, func_name):
         labels.append(f'{sel_name}\n{cross_name}')
 
     plt.figure(figsize=(8, 6))
-    plt.boxplot(boxplot_data, labels=labels)
+    plt.boxplot(boxplot_data, tick_labels=labels)
     plt.title(f'Gerações para Convergência - {func_name}')
     plt.ylabel('Gerações para Convergência')
     plt.xticks(rotation=45)
