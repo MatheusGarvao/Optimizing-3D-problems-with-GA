@@ -1,6 +1,9 @@
 import numpy as np
 import random as rand
 import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import pandas as pd
 
 
 # Função Schwefel
@@ -40,7 +43,7 @@ def fitness_function(cromossomo, func):
 
 
 # Função de Crossover Aritmético
-# Essa função trabalha ao longo das gerações, ela define um peso para o quanto um pai influência na criação de um novo
+# Essa função trabalha ao longo das gerações, ela define um peso para o quanto um pai influencia na criação de um novo
 # filho, e qual pai vai influênciar mais em qual filho.
 def crossover_arithmetic(parent1, parent2, generation, max_generations):
     alpha = rand.uniform(0.5 - 0.5 * (generation / max_generations), 0.5 + 0.5 * (generation / max_generations))
@@ -104,7 +107,6 @@ def roulette_wheel_selection(population, fitness_scores, problem_type='min'):
 # Função de Mutação Adaptativa
 # É uma função onde a taxa de mutação diminui conforme o tempo, para chegar a um ponto de convergência no final.
 def mutate(cromossomo, mutation_rate, bounds, generation, max_generations):
-
     adapt_mutation_rate = mutation_rate * (1 - generation / max_generations)
     for i in range(len(cromossomo)):
         if rand.random() < adapt_mutation_rate:
@@ -116,7 +118,7 @@ def mutate(cromossomo, mutation_rate, bounds, generation, max_generations):
 # Essa função serve para evoluir a população e selecionar os 25% melhores,
 # além de aplicar o crossover e mutações
 def evolve_population(population, fitness_func, mutation_rate, bounds, selection_func, crossover_func, generation,
-                      max_generations, problem_type):
+                     max_generations, problem_type):
     # Calcula o fitness de cada cromossomo na população
     fitnesses = [fitness_function(cromossomo, fitness_func) for cromossomo in population]
 
@@ -249,11 +251,13 @@ def run_and_plot(func, bounds, func_name):
     }
 
     results = {}  # Guarda os resultados de cada combinação de métodos
+    all_final_fitnesses = {}  # Guarda todos os fitness finais para análise paramétrica
 
     for sel_name, sel_func in selection_methods.items():
         for cross_name, cross_func in crossover_methods.items():
             print(f"\nExecutando AG com {sel_name} e {cross_name} para {func_name}")
             convergence_generations = []
+            final_fitnesses = []  # Lista para armazenar os fitness finais
             best_overall_fitness = None
             best_overall_cromossomo = None
             best_fitness_history = None
@@ -289,10 +293,20 @@ def run_and_plot(func, bounds, func_name):
                 if not converged:
                     convergence_generations.append(g_num_generations)
 
+                # Armazenar o fitness final da execução
+                final_fitnesses.append(best_fitness_ever)
+
                 if (best_overall_fitness is None) or (problem_type == 'min' and best_fitness_ever < best_overall_fitness) or (problem_type == 'max' and best_fitness_ever > best_overall_fitness):
                     best_overall_fitness = best_fitness_ever
                     best_overall_cromossomo = best_cromossomo
                     best_fitness_history = fitness_history
+
+            # Calcula a média das gerações para convergência
+            media_generations = np.mean(convergence_generations)
+            print(f"\nMédia de gerações para convergência: {media_generations:.2f}")
+
+            # Armazena os fitness finais para análise paramétrica
+            all_final_fitnesses[f"{sel_name} + {cross_name}"] = final_fitnesses
 
             results[(sel_name, cross_name)] = {
                 'convergence_generations': convergence_generations,
@@ -316,6 +330,36 @@ def run_and_plot(func, bounds, func_name):
     plt.title(f'Gerações para Convergência - {func_name}')
     plt.ylabel('Gerações para Convergência')
     plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(data=list(all_final_fitnesses.values()))
+    plt.xticks(ticks=range(len(all_final_fitnesses)), labels=list(all_final_fitnesses.keys()), rotation=45)
+    plt.title(f'Fitness Finais por Algoritmo - {func_name}')
+    plt.ylabel('Fitness Final')
+    plt.tight_layout()
+    plt.show()
+
+    data = [fitness for fitness in all_final_fitnesses.values()]
+    labels_anova = list(all_final_fitnesses.keys())
+
+    F, p = stats.f_oneway(*data)
+    print(f'\nAnálise ANOVA para {func_name}:')
+    print(f'  Estatística F: {F:.4f}')
+    print(f'  Valor-p: {p:.4f}')
+    if p < 0.05:
+        print('  Resultado: Há diferenças significativas entre os algoritmos.')
+    else:
+        print('  Resultado: Não há diferenças significativas entre os algoritmos.')
+
+    plt.figure(figsize=(10, 6))
+    for label, fitnesses in all_final_fitnesses.items():
+        sns.kdeplot(fitnesses, label=label, fill=True)
+    plt.title(f'Distribuição dos Fitness Finais - {func_name}')
+    plt.xlabel('Fitness Final')
+    plt.ylabel('Densidade')
+    plt.legend()
     plt.tight_layout()
     plt.show()
 
